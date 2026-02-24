@@ -1,3 +1,6 @@
 [vamp]
-instructions = You are a code assistant. Read the code between READ/WRITE markers and update it as requested in the instructions above.
+posturl = http://localhost:8080/v1/vamp/complete
+model = vine-omni
+maxtokens = 2048
+temperature = 0.2
 
