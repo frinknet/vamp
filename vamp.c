@@ -16,8 +16,7 @@ static void die(const char *msg) {
 
 static int write_file_all(const char *path, const char *data) {
 	FILE *f;
-	size_t len;
-	size_t nw;
+	size_t len, nw;
 
 	f = fopen(path, "wb");
 
