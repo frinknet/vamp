@@ -9,8 +9,8 @@
 
 #include "config.h"
 
-static const char *VAMP_DEFAULT_TEMPLATE = "{instructions}\n/* READ: {filename} */\n{file}\n/* TAGS: {filename} */\n{tags}\n/* WRITE: {filename} */\n";
-static const char *VAMP_DEFAULT_INSTRUCTIONS = "Update this file according to the instructions and code context.";
+static const char *VAMP_DEFAULT_TEMPLATE = "{instructions}\n/* TAGS: \n{tags}\n*/\n/* READ: {filename} */\n{file}\n/* WRITE: {filename} */\n";
+static const char *VAMP_DEFAULT_INSTRUCTIONS = "Update the file fixing the FIXME, TODO and REMOVE comments and output everything else unchanged.";
 
 /* Read entire file into NUL-terminated buffer, return malloc'd string or NULL */
 static char *prompt_read_file(const char *path) {
@@ -145,7 +145,7 @@ static char *prompt_build_tags(const char *filename) {
 	int c;
 
 	/* no language forcing; let ctags decide based on filename */
-	snprintf(cmd, sizeof(cmd), "ctags -x '%s' 2>/dev/null", filename);
+	snprintf(cmd, sizeof(cmd), "ctags -x --_xformat=\"%%{pattern}\" '%s' 2>/dev/null", filename);
 
 	fp = popen(cmd, "r");
 
