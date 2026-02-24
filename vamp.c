@@ -9,6 +9,8 @@
 #include "prompt.h"
 #include "fetch.h"
 
+static int prompt_only = 0;
+
 static void die(const char *msg) {
 	fprintf(stderr, "vamp: %s\n", msg);
 	exit(1);
@@ -67,12 +69,17 @@ static void setup_config(vamp_config *cfg, const char *mode, vamp_section **out_
 		die(buf);
 	}
 
+	/* read prompt-only from config */
+	const char *po = config_get_value(sec, "prompt-only");
+
+	if (po && !strcmp(po, "true")) prompt_only = 1;
+
 	*out_sec = sec;
 }
 
 static int handle_stdin_mode(vamp_section *sec, vamp_config *cfg) {
 	char *stdin_contents, *prompt, *out;
-	const char *filename;
+	const char *filename = "<stdin>";
 
 	stdin_contents = prompt_read_all(stdin);
 
@@ -81,13 +88,21 @@ static int handle_stdin_mode(vamp_section *sec, vamp_config *cfg) {
 		die("failed to read stdin");
 	}
 
-	filename = "<stdin>";
 	prompt = prompt_build_prompt(sec, filename, stdin_contents);
 
 	if (!prompt) {
 		free(stdin_contents);
 		config_free(cfg);
 		die("failed to build prompt");
+	}
+
+	if (prompt_only) {
+		fputs(prompt, stdout);
+		free(stdin_contents);
+		free(prompt);
+		config_free(cfg);
+
+		return 0;
 	}
 
 	if (fetch_completion(sec, prompt, &out) != 0) {
@@ -128,6 +143,17 @@ static int handle_file_mode(int argi, int argc, char **argv, vamp_section *sec, 
 			free(file_contents);
 			config_free(cfg);
 			die("failed to build prompt");
+		}
+
+		if (prompt_only) {
+			fputs(prompt, stdout);
+
+			if (argi + 1 < argc) fputc('\n', stdout);
+
+			free(file_contents);
+			free(prompt);
+
+			continue;
 		}
 
 		if (fetch_completion(sec, prompt, &out) != 0) {
@@ -174,7 +200,6 @@ int main(int argc, char **argv) {
 
 	if (argi < argc && strncmp(argv[argi], "--", 2) == 0) {
 		mode = argv[argi] + 2;
-
 		argi++;
 
 		if (argi >= argc && isatty(STDIN_FILENO)) die("no files specified");
